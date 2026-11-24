@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "windows/mon_prx_windows.conf",
+      "sha256": "04876969fd84e08217a5d7cea18bda6960a45ce688124aae35b134d7b4f59a9a"
+    },
+    {
+      "path": "windows/mon_prx_windows.ps1",
+      "sha256": "395f3b0c13a3641d820f114b1b8281acb68aec55d2e0fb7d1713e80869ca0f7a"
+    },
+    {
+      "path": "windows/mon_prx_windows_server.conf",
+      "sha256": "86993aa03ec399efd626330d5deda00c5fbf88e94f919eaabd191609eb791bde"
+    },
+    {
+      "path": "windows/mon_prx_windows_server.ps1",
+      "sha256": "e876f8326f76b20ae6efcdbcfcc4547a7d656b375e033ec22ae4d3bb183efd99"
+    }
+  ],
+  "generated": "2026-11-24T09:51:04Z"
+}
