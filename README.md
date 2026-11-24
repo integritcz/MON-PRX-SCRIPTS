@@ -5,6 +5,7 @@ Only scripts that run on monitored machines live here. No templates, no customer
 
 - `windows/mon_prx_windows.*`        - Windows PCs (profile MON-PRX-WINDOWS)
 - `windows/mon_prx_windows_server.*` - Windows Servers (profile MON-PRX-WINDOWS-SERVER)
+- `windows/mon_prx_update.ps1`        - daily self-update task on every machine (verifies the signature, then replaces own files)
 - `manifest.json` - SHA-256 of every script; `manifest.sig` - RSA signature of the manifest
 - `signing-public.xml` - public key the machines use to verify `manifest.sig`
 - `tools/sign.py` - rebuilds manifest and signature (private key is kept outside this repository)
