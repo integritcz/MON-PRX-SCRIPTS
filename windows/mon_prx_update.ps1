@@ -7,7 +7,10 @@
 #>
 param(
     [ValidateSet('windows', 'windows_server')][string]$Profile = 'windows',
-    [string]$BaseUrl = 'https://raw.githubusercontent.com/integritcz/MON-PRX-SCRIPTS/main'
+    [string]$BaseUrl = 'https://raw.githubusercontent.com/integritcz/MON-PRX-SCRIPTS/main',
+    # update = check and apply (the scheduled task); run = start the scheduled task and return at once (Zabbix "Execute now");
+    # status = JSON with the age of the last successful check and the last log line (Zabbix item).
+    [ValidateSet('update', 'run', 'status')][string]$Action = 'update'
 )
 $ErrorActionPreference = 'Stop'
 $dir     = 'C:\Program Files\Zabbix Agent 2'
@@ -16,6 +19,19 @@ $confDir = Join-Path $dir 'zabbix_agent2.d'
 $log     = Join-Path $scripts 'mon_prx_update.log'
 $state   = Join-Path $scripts 'mon_prx_update.state'
 $PublicKeyXml = '<RSAKeyValue><Modulus>miAusiBpbm3g8ZQ4EPKrdmDg/gQvddpnaUGAAwXov81FPwT3AI/9JyzvW6m4mZ/tULbcXl++EU40RFvaywOsoM/0vjmeLi94944JoVpuJGec2ChtooPFGQj+ctRJcTwrpOhHaiWlws0Az3aNxrLahS4Sssbn/Dqw3PP1I5tW6MNFBCsT0IhnicLAm3PQocgFpdqTPETLpb/LK7laxAT/Ra5Gm4GMq8YBEAsx8DxRmQSW/OlGAEQQqHdHbgkaaNtboCnOZcop9RJMb1QtyZYmAJslOSfYwfZw0dr7X4ryF6J9dgVU7AWrAza1lyqjyc0zSQgZkIY4+5dX7CarsuVSDve24WNCeQk+KfZN1lCsWTVx9RBENGVOGA+IPR139SWvbmv0lLSsYpIlsrRPgBbMfpOn3qnY5RcODl7r+pHQRQEs2g9cyYojaF32azoHLqicIWcL0FQ7XcpE0cjJPMcmqYcDqnzdX6vTul48y4eExhC9t9GohKJrC3xiDD7bDKWr</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>'
+
+if ($Action -eq 'run') {
+    try { Start-ScheduledTask -TaskName 'MON-PRX script update' -ErrorAction Stop; 'started' }
+    catch { "FAILED to start the task: $($_.Exception.Message)" }
+    exit 0
+}
+if ($Action -eq 'status') {
+    $ageH = -1; $gen = ''; $last = ''
+    if (Test-Path $state) { $ageH = [math]::Round(((Get-Date) - (Get-Item $state).LastWriteTime).TotalHours, 1); $gen = (Get-Content $state -Raw).Trim() }
+    if (Test-Path $log) { $last = (Get-Content $log -Tail 1) }
+    [pscustomobject]@{ age_hours = $ageH; manifest = $gen; last_line = $last } | ConvertTo-Json -Compress
+    exit 0
+}
 
 function Log($m) {
     $line = '{0:yyyy-MM-dd HH:mm:ss} {1}' -f (Get-Date), $m
