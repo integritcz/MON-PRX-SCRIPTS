@@ -1,4 +1,5 @@
 <#
+  Script version: 2026-11-24 (first signed self-update test)
   MON-PRX-WINDOWS-SERVER agent script for Windows Server (Zabbix agent 2 UserParameters, integrit s.r.o.).
   Runs as the agent service account (LocalSystem). Read-only. PowerShell 5.1+.
   Output: one line of compact JSON (UTF-8).

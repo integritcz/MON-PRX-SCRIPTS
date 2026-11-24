@@ -18,8 +18,8 @@
     },
     {
       "path": "windows/mon_prx_windows_server.ps1",
-      "sha256": "e876f8326f76b20ae6efcdbcfcc4547a7d656b375e033ec22ae4d3bb183efd99"
+      "sha256": "434661f74cd39650beeed1992ed8dfef0da142304124bc7f1c8ec2f3eba16ace"
     }
   ],
-  "generated": "2026-11-24T10:14:58Z"
+  "generated": "2026-11-24T10:29:09Z"
 }
