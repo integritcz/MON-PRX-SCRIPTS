@@ -68,6 +68,7 @@ try {
     if ($last -and $man.generated -lt $last) { throw "Manifest $($man.generated) is older than the applied $last. Nothing was changed." }
 
     $own = @("windows/mon_prx_$Profile.ps1", "windows/mon_prx_$Profile.conf", 'windows/mon_prx_update.ps1')
+    if ($Profile -eq 'windows_server') { $own += 'windows/mon_prx_actions.ps1', 'windows/mon_prx_actions.json' }
     $changed = @(); $confChanged = $false
     foreach ($f in $man.files) {
         if ($own -notcontains $f.path) { continue }

@@ -1,0 +1,8 @@
+{
+  "comment": "Services that MON-PRX may start again when they are stopped (start type Automatic). Per host name exactly as in Zabbix. Signed with the update manifest.",
+  "hosts": {
+    "MON-PRX-INTEGRIT-PBX-SRV-FG-HV": {
+      "recover": ["Spooler"]
+    }
+  }
+}
