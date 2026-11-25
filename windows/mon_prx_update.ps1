@@ -28,7 +28,8 @@ if ($Action -eq 'run') {
 if ($Action -eq 'status') {
     $ageH = -1; $gen = ''; $last = ''
     if (Test-Path $state) { $ageH = [math]::Round(((Get-Date) - (Get-Item $state).LastWriteTime).TotalHours, 1); $gen = (Get-Content $state -Raw).Trim() }
-    if (Test-Path $log) { $last = (Get-Content $log -Tail 1) }
+    # [string] drops the PSPath/PSDrive/... note properties that Get-Content attaches (PowerShell 5.1 would put them into the JSON).
+    if (Test-Path $log) { $last = [string](Get-Content $log -Tail 1) }
     [pscustomobject]@{ age_hours = $ageH; manifest = $gen; last_line = $last } | ConvertTo-Json -Compress
     exit 0
 }

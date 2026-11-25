@@ -10,7 +10,7 @@
     },
     {
       "path": "windows/mon_prx_update.ps1",
-      "sha256": "b75d1b494d6c813b6129cafb736296fe9c84373de91224eb491bf27176cde617"
+      "sha256": "9f71e9da73005ccd1796f2a8ec0579642d6f1a9a34bd9f4ab9841b95b8158968"
     },
     {
       "path": "windows/mon_prx_windows.conf",
@@ -29,5 +29,5 @@
       "sha256": "434661f74cd39650beeed1992ed8dfef0da142304124bc7f1c8ec2f3eba16ace"
     }
   ],
-  "generated": "2026-11-24T10:49:55Z"
+  "generated": "2026-11-25T08:43:58Z"
 }
