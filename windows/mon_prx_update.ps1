@@ -3,7 +3,8 @@
   Downloads manifest.json + manifest.sig from the public MON-PRX-SCRIPTS repository, checks the RSA signature with the
   public key built into this script, checks the SHA-256 of every file, and only then replaces this machine's own files.
   Only the files of this machine's profile are touched: mon_prx_<profile>.ps1 / .conf and this updater.
-  Anything that fails a check is skipped and logged; the old files stay. Log: scripts\mon_prx_update.log
+  Anything that fails a check is skipped and logged; the old files stay. A run with a skipped file counts as FAILED
+  (state not written, exit 1), so Zabbix shows it and the 3-day alert fires if it keeps happening. Log: scripts\mon_prx_update.log
 #>
 param(
     [ValidateSet('windows', 'windows_server')][string]$Profile = 'windows',
@@ -70,14 +71,14 @@ try {
 
     $own = @("windows/mon_prx_$Profile.ps1", "windows/mon_prx_$Profile.conf", 'windows/mon_prx_update.ps1')
     if ($Profile -eq 'windows_server') { $own += 'windows/mon_prx_actions.ps1', 'windows/mon_prx_actions.json' }
-    $changed = @(); $confChanged = $false
+    $changed = @(); $skipped = @(); $confChanged = $false
     foreach ($f in $man.files) {
         if ($own -notcontains $f.path) { continue }
         $name = Split-Path $f.path -Leaf
         $target = if ($name -like '*.conf') { Join-Path $confDir $name } else { Join-Path $scripts $name }
         if ((Test-Path $target) -and ((Sha256Hex ([IO.File]::ReadAllBytes($target))) -eq $f.sha256)) { continue }
         $bytes = Get-Bytes "$BaseUrl/$($f.path)"
-        if ((Sha256Hex $bytes) -ne $f.sha256) { Log "SKIPPED $($f.path): checksum does not match the signed manifest"; continue }
+        if ((Sha256Hex $bytes) -ne $f.sha256) { Log "SKIPPED $($f.path): checksum does not match the signed manifest"; $skipped += $name; continue }
         $tmp = "$target.new"
         [IO.File]::WriteAllBytes($tmp, $bytes)
         Move-Item -Path $tmp -Destination $target -Force
@@ -85,11 +86,13 @@ try {
         if ($name -like '*.conf') { $confChanged = $true }
         Log "UPDATED $name"
     }
-    Set-Content -Path $state -Value $man.generated -Encoding ASCII
     if ($confChanged) {
         Restart-Service -Name 'Zabbix Agent 2' -Force
         Log 'Zabbix Agent 2 restarted (the .conf changed)'
     }
+    # A skipped file is not a successful check: keep the old state so the next run retries and Zabbix sees FAILED.
+    if ($skipped.Count -gt 0) { throw "$($skipped.Count) file(s) skipped (checksum mismatch): $($skipped -join ', ')" }
+    Set-Content -Path $state -Value $man.generated -Encoding ASCII
     if ($changed.Count -eq 0) { Log "No change (manifest $($man.generated))" }
 }
 catch {
