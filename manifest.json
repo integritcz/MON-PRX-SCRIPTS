@@ -14,7 +14,7 @@
     },
     {
       "path": "windows/mon_prx_windows.conf",
-      "sha256": "1cd9e2ec753db0e74ccbfc94ba883340e1fd10a8c4d136c9c44e913cfdd279a3"
+      "sha256": "04876969fd84e08217a5d7cea18bda6960a45ce688124aae35b134d7b4f59a9a"
     },
     {
       "path": "windows/mon_prx_windows.ps1",
@@ -29,5 +29,5 @@
       "sha256": "434661f74cd39650beeed1992ed8dfef0da142304124bc7f1c8ec2f3eba16ace"
     }
   ],
-  "generated": "2026-11-25T12:45:36Z"
+  "generated": "2026-11-25T13:00:33Z"
 }
