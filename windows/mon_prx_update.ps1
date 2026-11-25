@@ -36,6 +36,7 @@ if ($Action -eq 'status') {
 }
 
 function Log($m) {
+    if ((Test-Path $log) -and ((Get-Item $log).Length -gt 200KB)) { Move-Item $log "$log.old" -Force }
     $line = '{0:yyyy-MM-dd HH:mm:ss} {1}' -f (Get-Date), $m
     Add-Content -Path $log -Value $line -Encoding UTF8
     Write-Host $line
