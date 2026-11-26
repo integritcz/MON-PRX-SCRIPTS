@@ -1,5 +1,12 @@
 {
-  "comment": "Services that MON-PRX may start again when they are stopped (start type Automatic). Per host name exactly as in Zabbix. Signed with the update manifest.",
+  "comment": "Automatic service restart for MON-PRX Windows servers. Signed with the update manifest. auto_all: off = only the host's recover list; report = also list the stopped Automatic services in would_start without starting them; on = start them. exclude: services that stop by design (name or display name, * allowed). hosts.<Zabbix host name>.recover: extra services to keep running (any start type except Disabled); hosts.<name>.exclude: services never started on that host.",
+  "auto_all": "report",
+  "exclude": [
+    "gupdate", "gupdatem", "GoogleUpdater*", "edgeupdate", "edgeupdatem", "MicrosoftEdgeElevationService",
+    "sppsvc", "MapsBroker", "RemoteRegistry", "clr_optimization_*", "DoSvc", "TrustedInstaller", "wuauserv",
+    "BITS", "MozillaMaintenance", "WbioSrvc", "tzautoupdate", "VSS", "swprv", "ShellHWDetection", "CDPUserSvc*",
+    "OneSyncSvc*", "WpnUserService*", "UnistoreSvc*", "UserDataSvc*", "PimIndexMaintenanceSvc*", "MessagingService*"
+  ],
   "hosts": {
     "MON-PRX-INTEGRIT-PBX-SRV-FG-HV": {
       "recover": ["Spooler"]

@@ -4,9 +4,14 @@
   Output: one line of compact JSON (UTF-8). Every change is written to scripts\mon_prx_actions.log.
 
   -Mode diag    : read-only diagnostics for a ticket: uptime, last Error/Critical events (24 h), top processes, free disk space.
-  -Mode recover : starts the services that are STOPPED, set to Automatic start AND listed for THIS host in mon_prx_actions.json.
-                  Nothing else can be started: the list is signed (delivered by the MON-PRX script updater), there is no
-                  parameter that takes a service name, and each service is started at most 3 times per hour.
+  -Mode recover : starts stopped services. Rule (the same on every server, from the signed mon_prx_actions.json):
+                  - every service with start type Automatic (also delayed) that is Stopped, is NOT a trigger-start service
+                    (those stop by design) and does not match the shared "exclude" list or the host's own "exclude" list;
+                  - plus the services listed for THIS host under "recover" (any start type except Disabled).
+                  "auto_all": "report" only lists the Automatic candidates (would_start) without starting them;
+                  "on" starts them. The host's "recover" list is always started. Nothing runs in the first 10 minutes
+                  after boot, each service is started at most 3 times per hour, and there is no parameter that takes a
+                  service name (only the signed list decides).
 #>
 param(
     [Parameter(Mandatory = $true)][ValidateSet('diag', 'recover')][string]$Mode
@@ -59,31 +64,56 @@ function Get-Diag {
     }
 }
 
+function Test-Match([string]$name, $patterns) {
+    foreach ($p in @($patterns)) { if ($p -and ($name -like $p)) { return $true } }
+    return $false
+}
+
 function Invoke-Recover {
-    $res = [ordered]@{ listed = 0; started = @(); failed = @(); skipped = @() }
+    $res = [ordered]@{ mode = 'off'; listed = 0; started = @(); failed = @(); skipped = @(); would_start = @() }
     if (-not (Test-Path $listF)) { return $res }
     $cfg = Get-Content $listF -Raw | ConvertFrom-Json
-    $mine = $cfg.hosts.PSObject.Properties | Where-Object { $_.Name -eq (Get-AgentHostName) } | Select-Object -First 1
-    if (-not $mine) { return $res }
-    $names = @($mine.Value.recover)
-    $res.listed = $names.Count
+    $hostName = Get-AgentHostName
+    $mine = $cfg.hosts.PSObject.Properties | Where-Object { $_.Name -eq $hostName } | Select-Object -First 1
+    $listed  = if ($mine -and $mine.Value.recover) { @($mine.Value.recover) } else { @() }
+    $exclude = @($cfg.exclude) + $(if ($mine -and $mine.Value.exclude) { @($mine.Value.exclude) } else { @() })
+    $res.mode = if ($cfg.auto_all) { [string]$cfg.auto_all } else { 'off' }
+    $res.listed = $listed.Count
+
+    $os = Get-CimInstance Win32_OperatingSystem
+    if (((Get-Date) - $os.LastBootUpTime).TotalMinutes -lt 10) { $res.skipped += 'all (server started less than 10 minutes ago)'; return $res }
+
+    # Candidates: listed services (any start type but Disabled) + Automatic ones by the rule.
+    $all = @(Get-CimInstance Win32_Service)
+    $cand = [ordered]@{}
+    foreach ($n in $listed) {
+        $s = $all | Where-Object { $_.Name -eq $n } | Select-Object -First 1
+        if (-not $s) { $res.skipped += "$n (not installed)"; continue }
+        if ($s.State -ne 'Stopped') { continue }
+        if ($s.StartMode -eq 'Disabled') { $res.skipped += "$n (disabled)"; continue }
+        $cand[$s.Name] = 'listed'
+    }
+    if ($res.mode -eq 'on' -or $res.mode -eq 'report') {
+        foreach ($s in $all) {
+            if ($s.StartMode -ne 'Auto' -or $s.State -ne 'Stopped' -or $cand.Contains($s.Name)) { continue }
+            if (Test-Path ("HKLM:\SYSTEM\CurrentControlSet\Services\{0}\TriggerInfo" -f $s.Name)) { continue }
+            if ((Test-Match $s.Name $exclude) -or (Test-Match $s.DisplayName $exclude)) { continue }
+            if ($res.mode -eq 'report') { $res.would_start += $s.Name } else { $cand[$s.Name] = 'auto' }
+        }
+    }
+
     $state = @{}
     if (Test-Path $stateF) { try { (Get-Content $stateF -Raw | ConvertFrom-Json).PSObject.Properties | ForEach-Object { $state[$_.Name] = @($_.Value) } } catch { } }
     $cut = (Get-Date).AddHours(-1)
-    foreach ($n in $names) {
-        $svc = Get-Service -Name $n -ErrorAction SilentlyContinue
-        if (-not $svc) { $res.skipped += "$n (not installed)"; continue }
-        if ($svc.Status -ne 'Stopped') { continue }
-        $start = (Get-CimInstance Win32_Service -Filter ("Name='{0}'" -f ($n -replace "'", ''))).StartMode
-        if ($start -ne 'Auto') { $res.skipped += "$n (start type $start)"; continue }
+    foreach ($n in @($cand.Keys)) {
         $recent = @($state[$n] | Where-Object { $_ -and ([datetime]$_) -gt $cut })
         if ($recent.Count -ge 3) { $res.failed += "$n (3 starts in the last hour, giving up)"; Write-Log "GAVE UP $n : started 3 times in the last hour"; continue }
         try {
             Start-Service -Name $n -ErrorAction Stop
-            $svc.WaitForStatus('Running', [TimeSpan]::FromSeconds(15))
+            (Get-Service -Name $n).WaitForStatus('Running', [TimeSpan]::FromSeconds(15))
             $state[$n] = $recent + (Get-Date).ToString('o')
             $res.started += $n
-            Write-Log "STARTED $n (was Stopped)"
+            Write-Log "STARTED $n (was Stopped, $($cand[$n]))"
         } catch {
             $state[$n] = $recent + (Get-Date).ToString('o')
             $res.failed += ("{0} ({1})" -f $n, (Cut $_.Exception.Message 80))

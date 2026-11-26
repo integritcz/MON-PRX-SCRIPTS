@@ -2,11 +2,11 @@
   "files": [
     {
       "path": "windows/mon_prx_actions.json",
-      "sha256": "c656d3c7adb8153ca003315767f110bdb48bb580130687a94b0b983a014da32a"
+      "sha256": "e531f9463162fe31d5e181becc838066abb91b7b48c080285e5f67c09e0cde3b"
     },
     {
       "path": "windows/mon_prx_actions.ps1",
-      "sha256": "6b25f2aabe36a8e77e53b9a00bb87223520470c64840c6900bea3085808fb63c"
+      "sha256": "90b02a54afeff855e64f12eaf59ce2a9e2e03a503f4023f3a1d96c2700c3b09f"
     },
     {
       "path": "windows/mon_prx_update.ps1",
@@ -29,5 +29,5 @@
       "sha256": "434661f74cd39650beeed1992ed8dfef0da142304124bc7f1c8ec2f3eba16ace"
     }
   ],
-  "generated": "2026-11-25T13:00:33Z"
+  "generated": "2026-11-26T14:09:56Z"
 }
